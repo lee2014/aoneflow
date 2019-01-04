@@ -1,0 +1,117 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Add job</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<script th:src="@{/webjars/jquery/1.9.1/jquery.js}"></script>
+	<script th:src="@{/webjars/bootstrap/3.0.0/js/bootstrap.min.js}"></script>
+	<script th:src="@{/webjars/bootstrap-datetimepicker/2.4.2/js/bootstrap-datetimepicker.js}"></script>
+	<script th:src="@{/webjars/bootstrap-datetimepicker/2.4.2/js/locales/bootstrap-datetimepicker.zh-CN.js}"></script>
+	<link th:href="@{/webjars/bootstrap/3.0.0/css/bootstrap.min.css}" rel="stylesheet" media="screen"/>
+	<link th:href="@{/webjars/bootstrap-datetimepicker/2.4.2/css/bootstrap-datetimepicker.css}" rel="stylesheet" media="screen"/>
+</head>
+<body>
+<div class="container">
+	<h1>New Job</h1>
+	<div class="col-md-4">
+		<form th:object="${job}" action="#">
+			<input type="text" th:field="*{jobName}" class="form-control"
+				   placeholder="JobName" />
+			<div style="clear: both; display: block; height: 10px;"></div>
+			<textarea th:field="*{command}" class="form-control" cols="20" rows="7" placeholder="Enter your Command"></textarea>
+			<div style="clear: both; display: block; height: 10px;"></div>
+			<input type="text" th:field="*{deps}" class="form-control"
+				   placeholder="Deps" />
+			<div style="clear: both; display: block; height: 10px;"></div>
+			<input type="text" th:field="*{scheduleTime}" class="form-control"
+				   placeholder="ScheduleTime"/>
+			<div style="clear: both; display: block; height: 10px;"></div>
+			<input type="text" th:field="*{businessTime}" class="form-control"
+				   placeholder="BusinessTime"/>
+			<div style="clear: both; display: block; height: 10px;"></div>
+			<textarea th:field="*{description}" class="form-control" cols="20" rows="7" placeholder="Enter your Description"></textarea>
+			<div style="clear: both; display: block; height: 10px;"></div>
+			<input type="button" class="btn btn-primary" value="Save" onclick="addJob()"/>
+		</form>
+	</div>
+</div>
+</body>
+<script>
+	// 日期选择器
+    $('#businessTime').datetimepicker({
+        language: 'zh-CN',
+        format: 'yyyy-mm-dd hh:ii:ss'
+	});
+    $('#scheduleTime').datetimepicker({
+        language: 'zh-CN',
+		format: 'yyyy-mm-dd hh:ii:ss'
+	});
+
+    // 添加job
+    function addJob() {
+        if (!validateInput()){
+            return false;
+		}
+
+        var data = {};
+        data["jobName"] = $("#jobName").val();
+        data["command"] = $("#command").val();
+        if ($.trim($("#deps").val()) !== "") {
+            data["deps"] = $("#deps").val().split(",");
+		} else {
+            data["deps"] = [];
+        }
+        data["businessTime"] = $("#businessTime").val();
+        data["scheduleTime"] = $("#scheduleTime").val();
+        data["description"] = $("#description").val();
+
+        $.ajax({
+            type: "POST",
+			contentType: "application/json;charset=UTF-8",
+            url: "/job/addJob",
+			data: JSON.stringify(data),
+            dataType: 'JSON',
+            cache: false,
+            timeout: 600000,
+        }).done(
+            function(data){
+                alert(data.msg);
+                location.href="/job/listJob";
+            }
+        ).fail(
+            function (e) {
+                console.log("ERROR : ", e);
+            }
+        );
+    }
+
+    // 验证输入
+    function validateInput() {
+		var jobName = $("#jobName").val();
+        var command = $("#command").val();
+        var businessTime = $("#businessTime").val();
+        var scheduleTime = $("#scheduleTime").val();
+
+        if (jobName == null || jobName == ''){
+            alert("请输入jobName！");
+            return false;
+		}
+
+        if (command == null || command == ''){
+            alert("请输入command！");
+            return false;
+        }
+
+        if (scheduleTime == null || scheduleTime == ''){
+            alert("请输入scheduleTime！");
+            return false;
+        }
+
+        if (businessTime == null || businessTime == ''){
+            alert("请输入businessTime！");
+            return false;
+        }
+		return true;
+    }
+</script>
+</html>

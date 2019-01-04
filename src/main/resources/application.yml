@@ -1,0 +1,43 @@
+server:
+  port: 8081
+  tomcat:
+    uri-encoding: UTF-8
+
+spring:
+  application:
+    name: aone-flow
+  datasource:
+    username: root
+    password: MYSQL#root%2017
+    url: jdbc:mysql://localhost:3306/workflow?useUnicode=true&characterEncoding=UTF-8&useSSL=false
+    driver-class-name: com.mysql.jdbc.Driver
+    tomcat:
+      test-on-borrow: true
+      test-while-idle: true
+      validation-query: select 1
+      min-evictable-idle-time-millis: 18800
+      max-active: 50
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.MySQL57Dialect
+    show-sql: false
+  data:
+    jpa:
+      repositories:
+        enabled: true
+  thymeleaf:
+    cache: false
+    suffix: .html
+    prefix: classpath:/templates
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+  output:
+    ansi:
+      enabled: always
+
+logging:
+  flow:
+    path: ../logs/aone-flow

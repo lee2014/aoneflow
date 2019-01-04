@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>JobList</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link th:href="@{/webjars/bootstrap/3.0.0/css/bootstrap.min.css}" rel="stylesheet" media="screen"/>
+    <script th:src="@{/webjars/jquery/1.9.1/jquery.js}"></script>
+</head>
+<body>
+
+<div class="container">
+    <div class="row" style="margin-top: 50px">
+        <div class="span12">
+            <form id="searchForm" name="searchForm" class="form-inline" action="/job/listJob" method="post">
+                <input type="hidden" name="page" id="page" value="0"/>
+                <input type="hidden" name="pageSize" id="pageSize" th:value="${jobPage.size}"/>
+                <div class="form-group">
+                    <select id="status" name="status" class="form-control">
+                        <option value="" th:selected="${status == ''} ? selected">NONE</option>
+                        <option value="WAITING" th:selected="${status == 'WAITING'} ? selected">WAITING</option>
+                        <option value="RUNNING" th:selected="${status == 'RUNNING'} ? selected">RUNNING</option>
+                        <option value="SUCCESS" th:selected="${status == 'SUCCESS'} ? selected">SUCCESS</option>
+                        <option value="FAILED" th:selected="${status == 'FAILED'} ? selected">FAILED</option>
+                        <option value="KILLED" th:selected="${status == 'KILLED'} ? selected">KILLED</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="text" class="form-control" id="jobName" name="jobName" placeholder="jobName" th:value="${jobName}">
+                </div>
+                <button type="submit" class="btn btn-default">查找</button>
+            </form>
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>
+                        Job名称
+                    </th>
+                    <th>
+                        执行脚本
+                    </th>
+                    <th>
+                        Job依赖
+                    </th>
+                    <th>
+                        业务时间
+                    </th>
+                    <th>
+                        调度时间
+                    </th>
+                    <th>
+                        描述
+                    </th>
+                    <th>
+                        状态
+                    </th>
+                    <th>
+                        操作
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each = "job : ${jobPage}">
+                    <td th:text="${job.jobName}"></td>
+                    <td th:text="${job.command}"></td>
+                    <td th:text="${#strings.listJoin(job.deps, ',')}"></td>
+                    <td th:text="${job.businessTime}"></td>
+                    <td th:text="${job.scheduleTime}"></td>
+                    <td th:text="${job.description}"></td>
+                    <th:block th:switch="${job.status}">
+                        <td th:case="'SUCCESS'" class="text-success" th:text="${job.status}"></td>
+                        <td th:case="'RUNNING'" class="text-primary" th:text="${job.status}"></td>
+                        <td th:case="'WAITING'" class="text-dark" th:text="${job.status}"></td>
+                        <td th:case="'FAILED'" class="text-warning" th:text="${job.status}"></td>
+                        <td th:case="'KILLED'" class="text-danger" th:text="${job.status}"></td>
+                    </th:block>
+                    <td>
+                        <a th:href="@{/job/editJobInput(jobName=${job.jobName})}" class="btn btn-primary btn-xs">编辑</a>
+                        <a href="#" class="btn btn-danger btn-xs" th:onclick="'javascript:delJobByJobName(\''+${job.jobName}+'\');return false;'">删除</a>
+                        <a href="#" class="btn btn-warning btn-xs" th:onclick="'javascript:restartJob(\''+${job.jobName}+'\');return false;'">重跑</a>
+                        <a href="#" class="btn btn-danger btn-xs" th:onclick="'javascript:killJob(\''+${job.jobName}+'\');return false;'">终止</a>
+                        <a href="#" class="btn btn-success btn-xs" th:onclick="'javascript:forceJob(\''+${job.jobName}+'\');return false;'">置成功</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <div class="text-center">
+                <ul class="pagination">
+                    <!--第一页 @{/job/listJob(pageSize=${jobPage.size}, page=0)}-->
+                    <li th:class="${jobPage.number == 0} ? disabled"><a
+                            class="pageLink"
+                            href="#" th:onclick="'javascript:page(\''+${jobPage.size}+'\',0);return false;'">&laquo;</a>
+                    </li>
+
+                    <!--上一页 @{/job/listJob(pageSize=${jobPage.size}, page=${jobPage.number - 1})}-->
+                    <li th:class="${jobPage.number == 0} ? disabled"><a
+                            class="pageLink"
+                            href="#" th:onclick="'javascript:page(\''+${jobPage.size}+'\',\''+${jobPage.number - 1}+'\');return false;'">&larr;</a>
+                    </li>
+
+                    <!--数字页码 @{/job/listJob(pageSize=${jobPage.size}, page=${page - 1})}-->
+                    <li
+                            th:class="${jobPage.number == (page - 1)} ? 'active pointer-disabled'"
+                            th:each="page : ${#numbers.sequence(pager.startPage, pager.endPage)}">
+                        <a class="pageLink"
+                           href="#" th:text="${page}" th:onclick="'javascript:page(\''+${jobPage.size}+'\',\''+${page - 1}+'\');return false;'"></a>
+                    </li>
+
+                    <!--下一页 @{/job/listJob(pageSize=${jobPage.size}, page=${jobPage.number + 1})}-->
+                    <th:block th:if="${jobPage.number < jobPage.totalPages - 1}">
+                        <li>
+                            <a class="pageLink"
+                               href="#" th:onclick="'javascript:page(\''+${jobPage.size}+'\',\''+${jobPage.number + 1}+'\');return false;'">&rarr;</a>
+                        </li>
+                    </th:block>
+
+                    <th:block th:if="${jobPage.number == jobPage.totalPages - 1}">
+                        <li class="disabled">
+                            <a class="pageLink" href="#">&rarr;</a>
+                        </li>
+                    </th:block>
+
+                    <!--最后一页 @{/job/listJob(pageSize=${jobPage.size}, page=${jobPage.totalPages - 1})}-->
+                    <li
+                            th:class="${jobPage.number == jobPage.totalPages - 1} ? disabled">
+                        <a class="pageLink"
+                           href="#" th:onclick="'javascript:page(\''+${jobPage.size}+'\',\''+${jobPage.totalPages - 1}+'\');return false;'">&raquo;</a>
+                    </li>
+                </ul>
+           </div>
+            <a href="/job/addJobInput" class="btn btn-primary">添加JOB</a>
+            <a href="/job/listJob" class="btn btn-success">刷新</a>
+        </div>
+    </div>
+</div>
+</body>
+<script type="text/javascript" language="JavaScript">
+
+    // 分页
+    function page(pageSize,page){
+        var searchForm = document.getElementById("searchForm");
+        document.getElementById("pageSize").value = pageSize;
+        document.getElementById("page").value = page;
+        searchForm.submit();
+    }
+
+    // 删除job
+    function delJobByJobName(jobName){
+        $.ajax({
+            type: "DELETE",
+            url: "/job/delJobByJobName?jobName=" + encodeURIComponent(jobName),
+            dataType: 'JSON',
+            cache: false,
+            timeout: 600000
+        }).done(
+            function(data){
+                alert(data.msg);
+                location.href="/job/listJob";
+            }
+        ).fail(
+            function (e) {
+                console.log("ERROR : ", e);
+            }
+        );
+    }
+
+    // 重启job
+    function restartJob(jobName){
+        $.ajax({
+            type: "PUT",
+            url: "/job/editWithRestartJobByJobName?jobName=" + encodeURIComponent(jobName),
+            dataType: 'JSON',
+            cache: false,
+            timeout: 600000
+        }).done(
+            function(data){
+                alert(data.msg);
+                location.href="/job/listJob";
+            }
+        ).fail(
+            function (e) {
+                console.log("ERROR : ", e);
+            }
+        );
+    }
+
+    // 杀死job
+    function killJob(jobName){
+        $.ajax({
+            type: "PUT",
+            url: "/job/editWithKillJobByJobName?jobName=" + encodeURIComponent(jobName),
+            dataType: 'JSON',
+            cache: false,
+            timeout: 600000
+        }).done(
+            function(data){
+                alert(data.msg);
+                location.href="/job/listJob";
+            }
+        ).fail(
+            function (e) {
+                console.log("ERROR : ", e);
+            }
+        );
+    }
+
+    // 置成功
+    function forceJob(jobName){
+        $.ajax({
+            type: "PUT",
+            url: "/job/editWithForceJobByJobName?jobName=" + encodeURIComponent(jobName),
+            dataType: 'JSON',
+            cache: false,
+            timeout: 600000
+        }).done(
+            function(data){
+                alert(data.msg);
+                location.href="/job/listJob";
+            }
+        ).fail(
+            function (e) {
+                console.log("ERROR : ", e);
+            }
+        );
+    }
+</script>
+</html>
